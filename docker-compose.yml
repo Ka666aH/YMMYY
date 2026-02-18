@@ -1,0 +1,45 @@
+services:
+  ymmyy:
+    build: .
+    network_mode: host 
+    restart: unless-stopped
+    depends_on:
+      libre:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SPOONACULAR_API_KEY: ${SPOONACULAR_API_KEY}
+      LT_URL: http://localhost:5555 
+      REDIS_ADDRESS: localhost:6379
+
+  libre:
+    image: libretranslate/libretranslate:latest
+    network_mode: host 
+    restart: unless-stopped
+    healthcheck:
+      #test: ["CMD-SHELL", "./venv/bin/python scripts/healthcheck.py"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5555/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
+    environment:
+      LT_PORT: 5555
+      LT_LOAD_ONLY: en,ru
+
+  redis:
+    image: redis
+    network_mode: host 
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    volumes:
+      - redis-data:/data 
+
+volumes:
+  redis-data:
