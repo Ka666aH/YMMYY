@@ -1,6 +1,8 @@
 services:
   ymmyy:
-    build: .
+    build:
+      context: .
+      network: host
     network_mode: host 
     restart: unless-stopped
     depends_on:
