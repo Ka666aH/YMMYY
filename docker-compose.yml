@@ -10,6 +10,7 @@ services:
         condition: service_healthy
     environment:
       SPOONACULAR_API_KEY: ${SPOONACULAR_API_KEY}
+      SPOONACULAR_API_URL: https://api.spoonacular.com 
       LT_URL: http://localhost:5555 
       REDIS_ADDRESS: localhost:6379
 
