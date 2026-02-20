@@ -2,6 +2,7 @@ using Application.Interfaces.RepositoryInterfaces;
 using Application.Interfaces.ServiceInterfaces;
 using Application.Services;
 using Infrastructure.Cache;
+using Infrastructure.RecipesSource;
 using Infrastructure.Translator;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,16 +18,17 @@ builder.Services.AddStackExchangeRedisCache(options =>
         throw new Exception("Redis address is not set.");
 });
 
-builder.Services.AddHttpClient<LibreTranslator>((sp, client) =>
-{
-    client.BaseAddress = new Uri(Environment.GetEnvironmentVariable("LT_URL") ??
-        throw new Exception("Libre translate address is not set."));
-});
-
-builder.Services.AddScoped<ITranslator, LibreTranslator>();
 builder.Services.AddScoped<ICache, RedisCache>();
+builder.Services.AddScoped<ITranslator, LibreTranslator>();
+builder.Services.AddScoped<IRecipesSource, Spoonacular>();
+
+builder.Services.AddHttpClient<LibreTranslator>();
+builder.Services.AddHttpClient<Spoonacular>();
 
 builder.Services.AddScoped<ITranslatorService, TranslatorService>();
+builder.Services.AddScoped<IRecipesSourceService, RecipesSourceService>();
+
+builder.Services.AddScoped<IRecipesFinder, RecipesFinder>();
 
 var app = builder.Build();
 
