@@ -2,6 +2,6 @@
 {
     public interface ICache
     {
-        Task<string> GetOrCreateAsync(string key, Func<Task<string>> factory, CancellationToken ct = default); 
+        Task<T> GetOrCreateAsync<T>(string key, Func<Task<T>> factory, CancellationToken ct = default); 
     }
 }

@@ -29,44 +29,48 @@ namespace Application.Services
             var results = await Task.WhenAll(tasks);
             return results.ToList();
         }
-        public async Task<Recipe> TranslateRecipeAsync(Recipe recipe, string target, CancellationToken ct = default)
+        public async Task<List<Recipe>> TranslateRecipeAsync(List<Recipe> recipes, string target, CancellationToken ct = default)
         {
-            var titleTask = _cache.GetOrCreateAsync(
-                $"{recipe.Title}:{target}",
-                async () => await _translator.TranslateAsync(recipe.Title, Languages.English, target, ct),
-                ct);
-
-            List<Task<string>> usedTasks = [];
-            if (recipe.UsedIngredients.Count > 0)
+            List<Recipe> result = [];
+            foreach (var recipe in recipes)
             {
+                var titleTask = _cache.GetOrCreateAsync(
+    $"{recipe.Title}:{target}",
+    async () => await _translator.TranslateAsync(recipe.Title, Languages.English, target, ct),
+    ct);
 
-                usedTasks.AddRange(
-                    recipe.UsedIngredients.Select(ing =>
-                    _cache.GetOrCreateAsync(
-                        $"{ing}:{target}",
-                        async () => await _translator.TranslateAsync(ing, Languages.English, target, ct),
-                        ct)
-                    )
-                    );
+                List<Task<string>> usedTasks = [];
+                if (recipe.UsedIngredients.Count > 0)
+                {
+
+                    usedTasks.AddRange(
+                        recipe.UsedIngredients.Select(ing =>
+                        _cache.GetOrCreateAsync(
+                            $"{ing}:{target}",
+                            async () => await _translator.TranslateAsync(ing, Languages.English, target, ct),
+                            ct)
+                        )
+                        );
+                }
+                List<Task<string>> missingTasks = [];
+                if (recipe.MissingIngredients.Count > 0)
+                {
+                    missingTasks.AddRange(
+                        recipe.MissingIngredients.Select(ing =>
+                        _cache.GetOrCreateAsync(
+                            $"{ing}:{target}",
+                            async () => await _translator.TranslateAsync(ing, Languages.English, target, ct),
+                            ct)
+                        )
+                        );
+                }
+
+                string title = await titleTask;
+                var used = await Task.WhenAll(usedTasks);
+                var missing = await Task.WhenAll(missingTasks);
+                result.Add(new Recipe(title, recipe.ImageURL, used.ToList(), missing.ToList()));
             }
-            List<Task<string>> missingTasks = [];
-            if (recipe.MissingIngredients.Count > 0)
-            {
-                missingTasks.AddRange(
-                    recipe.MissingIngredients.Select(ing =>
-                    _cache.GetOrCreateAsync(
-                        $"{ing}:{target}",
-                        async () => await _translator.TranslateAsync(ing, Languages.English, target, ct),
-                        ct)
-                    )
-                    );
-            }
-
-            string title = await titleTask;
-            var used = await Task.WhenAll(usedTasks);
-            var missing = await Task.WhenAll(missingTasks);
-
-            return new Recipe(title, recipe.ImageURL, used.ToList(), missing.ToList());
+            return result;
         }
     }
 }

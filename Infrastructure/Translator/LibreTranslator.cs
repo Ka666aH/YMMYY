@@ -10,6 +10,7 @@ namespace Infrastructure.Translator
         public LibreTranslator(HttpClient httpClient)
         {
             _httpClient = httpClient;
+            _httpClient.BaseAddress = new Uri(Environment.GetEnvironmentVariable("LT_URL") ?? throw new Exception("Libre translate address is not set."));
         }
 
         public async Task<string> TranslateAsync(string word, string source, string target, CancellationToken ct = default)
@@ -18,7 +19,7 @@ namespace Infrastructure.Translator
 
             try
             {
-                var response = await _httpClient.PostAsJsonAsync("/translate", request, ct);
+                var response = await _httpClient.PostAsJsonAsync("translate", request, ct); //http://localhost:5555/translate
                 response.EnsureSuccessStatusCode();
                 var result = await response.Content.ReadFromJsonAsync<TranslateResponse>(ct);
                 return result?.translatedText ?? word;
